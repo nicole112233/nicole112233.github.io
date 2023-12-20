@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raw2Type</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    textarea {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%
+    }
+
+    button {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+
+    button+button {
+      margin-top: 50px;
+    }
+
+    div {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      padding: 20px;
+      white-space: pre-wrap;
+      overflow-y: auto;
+
+    }
+  </style>
+</head>
+
+<body>
+  <textarea id="origin" placeholder="请输入"></textarea>
+  <button onclick="t()">转换</button>
+  <button onclick="copy()">复制</button>
+  <div></div>
+</body>
+
+</html>
+<script>
+  function tType(v) {
+    return {
+      "integer": 'number',
+      "boolean": "boolean",
+      "string": "string"
+    } [v.type]
+  }
+
+
+  /** yapi raw 转 ts类型 */
+  function getType(k, v, tab, isArray) {
+    // console.log('v: ', v);
+    // console.log('k: ', k);
+    let t = ``
+    if (v.description) {
+      t += `  /** ${v.description || ''} */ \n`
+    }
+    if (v.type === "object") {
+      if (isArray) {
+        t += `${tab}{\n`
+      } else {
+        t += `${tab}${k}: {\n`
+      }
+      Object.entries(v.properties).map(([kk, vv]) => {
+        t += `${tab}${getType(kk, vv, tab+'  ')}\n`
+      })
+      t += `${tab}}\n`
+
+    } else if (v.type === 'array') {
+      t += `${tab}${k}: \n`
+      t += `${tab}${getType('',v.items, tab+'  ', true)}\n`
+      t += `${tab}[]\n`
+    } else {
+      if (isArray) {
+        t += `${tab}${tType(v)}`
+      } else {
+        t += `${tab}${k}: ${tType(v)};\n`
+      }
+    }
+    // console.log('t: ', t);
+    return t
+
+  }
+
+  function t() {
+    let v = document.querySelector('textarea').value
+    eval(`window.k = ${v}`)
+    console.log(window.k);
+    let vv = getType('T', eval(window.k), '')
+    console.log('vv: ', vv);
+    window.type = vv.replace(/[\n]+/g, '\n').replace(/[\n\s]+\[/g, '\[').replace(/[\n\s]+\{/g, '\{').replace(/^T:/, 'type T = ')
+    document.querySelector('div').innerHTML = window.type
+  }
+
+  function copy() {
+    navigator.clipboard.writeText(window.type)
+
+  }
+</script>
