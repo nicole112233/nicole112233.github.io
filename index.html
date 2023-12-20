@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Json2Type</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    textarea {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%
+    }
+
+    button {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+
+    div {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      padding: 20px;
+      white-space: pre-wrap;
+      overflow-y: auto;
+
+    }
+  </style>
+</head>
+
+<body>
+  <textarea id="origin" placeholder="请输入"></textarea>
+  <button onclick="t()">转换</button>
+  <div></div>
+</body>
+</html>
+<script>
+  /** json 转 ts类型 */
+  function getType(value) {
+    let typeRes = ``;
+    if (Array.isArray(value)) {
+      value.forEach(item => {
+        let subType = getType(item);
+        if (typeRes.split('|').indexOf(subType) < 0) {
+          typeRes += subType
+          typeRes += "|"
+        }
+      })
+      typeRes = typeRes.substring(0, typeRes.length - 1)
+      return `${typeRes}[]`;
+    }
+    if (typeof value === 'object' && value !== null) {
+      const props = Object.entries(value)
+        .map(([key, val]) => `${key}: ${getType(val)}`)
+        .join(';');
+      return `{${props}}`;
+    }
+    return typeof value;
+  }
+
+  function t() {
+    let v = document.querySelector('textarea').value
+    eval(`window.k = ${v}`)
+    let vv = getType(eval(window.k))
+    document.querySelector('div').innerHTML = vv
+    // navigator.clipboard.writeText(vv)
+  }
+</script>
